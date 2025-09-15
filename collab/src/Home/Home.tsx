@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router";
 
 export default function Home(){
     return (
@@ -11,11 +12,10 @@ export default function Home(){
                         <Button variant="secondary">Join</Button>
                     </div>
                     <p>or</p>
-                    <Button>Create a new room</Button>
+                    <Link to="/room/1"><Button>Create a new room</Button></Link>
                 </div>
             </div>
             <div className="flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 flex items-center justify-center flex-grow h-full">
-
             </div>
         </div>
     );
