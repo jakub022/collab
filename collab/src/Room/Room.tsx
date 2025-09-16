@@ -4,7 +4,7 @@ import Toolbar from "./Toolbar";
 import { Arrow, Line, Layer, Rect, Stage, Text } from "react-konva";
 import Konva from "konva";
 import { useEffect, useRef, useState } from "react";
-import type { Shape, Tool } from "@/util/types";
+import type { InitMessage, ResetMessage, Shape, ShapeMessage, Tool, WSMessage } from "@/util/types";
 
 export default function Room(){
 
@@ -18,6 +18,50 @@ export default function Room(){
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
 
+    const [socket, setSocket] = useState<WebSocket | null>(null);
+
+    const [username] = useState(() => `User#${Math.floor(Math.random() * 10000)}`);
+
+    useEffect(()=>{
+        if(!roomId){
+            return;
+        }
+
+        const ws = new WebSocket(`/ws/${roomId}`);
+        setSocket(ws);
+
+        ws.onopen = ()=>{
+            console.log("Connected to room: " + roomId);
+        };
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data) as WSMessage;
+
+            switch(msg.type){
+                case "shape":
+                    setShapes((prev)=>[...prev.filter((s)=>s.id !== msg.payload.id), msg.payload]);
+                    break;
+                case "reset":
+                    setShapes([]);
+                    break;
+                case "chat":
+                    break;
+                case "init":
+                    setShapes((msg as InitMessage).payload);
+                    break;
+                default:
+                    break;
+            }
+        }
+        ws.onclose = ()=>{
+            console.log("Disconnected from room: " + roomId);
+        };
+
+        return ()=>{
+            ws.close();
+        };
+    }, [roomId]);
+
+
     useEffect(() => {
         if(!containerRef.current){
             return;
@@ -25,6 +69,45 @@ export default function Room(){
         setStageWidth(containerRef.current.offsetWidth)
         setStageHeight(containerRef.current.offsetHeight)
     }, []);
+
+    function reset(){
+        setShapes([]);
+        socket?.send(JSON.stringify({type: "reset"} as ResetMessage));
+    }
+
+    function dragEndSimple(shape: { id: string }) {
+        return (e: Konva.KonvaEventObject<DragEvent>) => {
+            const node = e.target;
+            const newX = node.x();
+            const newY = node.y();
+
+            setShapes((prev) =>
+                prev.map((s) =>
+                    s.id === shape.id ? { ...s, x: newX, y: newY } : s
+                )
+            );
+            socket?.send(JSON.stringify({type: "shape", payload: { ...shape, x: newX, y: newY } } as ShapeMessage));
+        };
+    }
+
+    function dragEndLine(shape: { id: string; points: number[] }) {
+        return (e: Konva.KonvaEventObject<DragEvent>) => {
+            const node = e.target;
+            const dx = node.x();
+            const dy = node.y();
+
+            const newPoints = shape.points.map((p, i) => (i % 2 === 0 ? p + dx : p + dy));
+            node.position({ x: 0, y: 0 });
+
+            setShapes((prev) =>
+                prev.map((s) =>
+                    s.id === shape.id ? { ...s, points: newPoints } : s
+                )
+            );
+
+            socket?.send(JSON.stringify({type: "shape", payload: { ...shape, points: newPoints }} as ShapeMessage));
+        };
+    }
 
     const shapeElements = shapes.map((shape)=>{
         switch (shape.type){
@@ -38,6 +121,7 @@ export default function Room(){
                         height={50}
                         fill="black"
                         draggable={tool === "hand"}
+                        onDragEnd={dragEndSimple(shape)}
                     />
                 );
             case "text":
@@ -49,6 +133,7 @@ export default function Room(){
                         text={shape.text}
                         fontSize={16}
                         draggable={tool === "hand"}
+                        onDragEnd={dragEndSimple(shape)}
                     />
                 );
             case "pen":
@@ -61,6 +146,8 @@ export default function Room(){
                         tension={0.5}
                         lineCap="round"
                         lineJoin="round"
+                        draggable={tool === "hand"}
+                        onDragEnd={dragEndLine(shape)}
                     />
                 );
             case "arrow":
@@ -72,6 +159,8 @@ export default function Room(){
                         strokeWidth={2}
                         pointerLength={10}
                         pointerWidth={10}
+                        draggable={tool === "hand"}
+                        onDragEnd={dragEndLine(shape)}
                     />
                 );
         }
@@ -89,7 +178,7 @@ export default function Room(){
 
     return (
         <div ref={containerRef} className="relative w-full h-full">
-            <Toolbar setTool={setTool} shapes={shapes} setShapes={setShapes} />
+            <Toolbar setTool={setTool} shapes={shapes} setShapes={setShapes} reset={reset} />
             <Stage
                 width={stageWidth}
                 height={stageHeight}
@@ -98,21 +187,28 @@ export default function Room(){
                     if (!stage) return;
                     const pos = getPos(stage);
 
+                    let newShape: Shape | null = null
+
                     switch(tool){
                         case "square":
-                            setShapes([...shapes, { id: crypto.randomUUID(), type: "square", x: pos.x, y: pos.y }]);
+                            newShape = { id: crypto.randomUUID(), type: "square", x: pos.x, y: pos.y };
                             break;
                         case "text":
-                            setShapes([...shapes, { id: crypto.randomUUID(), type: "text", x: pos.x, y: pos.y, text: "TEXT" }]);
+                            newShape = { id: crypto.randomUUID(), type: "text", x: pos.x, y: pos.y, text: "TEXT" };
                             break;
                         case "pen":
                             setIsDrawing(true);
-                            setShapes([...shapes, { id: crypto.randomUUID(), type: "pen", points: [pos.x, pos.y]}]);
+                            newShape = { id: crypto.randomUUID(), type: "pen", points: [pos.x, pos.y]};
                             break;
                         case "arrow":
                             setIsDrawing(true);
-                            setShapes([...shapes,{ id: crypto.randomUUID(), type: "arrow", points: [pos.x, pos.y]}]);
+                            newShape = { id: crypto.randomUUID(), type: "arrow", points: [pos.x, pos.y]};
                             break;
+                    }
+
+                    if(newShape){
+                        setShapes([...shapes, newShape]);
+                        socket?.send(JSON.stringify({type: "shape", payload: newShape} as ShapeMessage));
                     }
                 }}
                 onMouseMove={(e)=>{
@@ -132,15 +228,19 @@ export default function Room(){
                         }
 
                         if (last.type === "pen") {
-                            // Add new point
+                            // new point
                             const updated = { ...last, points: [...last.points, pos.x, pos.y] };
-                            return [...prev.slice(0, -1), updated];
+                            const newShapes = [...prev.slice(0, -1), updated];
+                            socket?.send(JSON.stringify({type: "shape", payload: updated} as ShapeMessage))
+                            return newShapes;
                         }
 
                         if (last.type === "arrow") {
-                            // Update end point only
+                            // end point
                             const updated = { ...last, points: [last.points[0], last.points[1], pos.x, pos.y] };
-                            return [...prev.slice(0, -1), updated];
+                            const newShapes = [...prev.slice(0, -1), updated];
+                            socket?.send(JSON.stringify({type: "shape", payload: updated} as ShapeMessage))
+                            return newShapes;
                         }
 
                         return prev;
@@ -155,7 +255,7 @@ export default function Room(){
                     {shapeElements}
                 </Layer>
             </Stage>
-            <Chat />
+            <Chat ws={socket} username={username} />
         </div>
     );
 }

@@ -7,10 +7,11 @@ import { useRef } from "react";
 interface ToolbarProps {
     shapes: Shape[],
     setShapes: (shapes: Shape[]) => void,
-    setTool: (tool: Tool)=> void
+    setTool: (tool: Tool)=> void,
+    reset: () => void
 }
 
-export default function Toolbar( { setTool, shapes, setShapes } : ToolbarProps){
+export default function Toolbar( { setTool, shapes, setShapes, reset } : ToolbarProps){
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,7 +55,7 @@ export default function Toolbar( { setTool, shapes, setShapes } : ToolbarProps){
                 <Button onClick={()=>download()} variant="secondary"><Download/></Button>
                 <Button onClick={() => fileInputRef.current?.click()} variant="secondary"><Upload/></Button>
                 <input type="file" accept=".json" ref={fileInputRef} style={{ display: "none" }} onChange={upload}/>
-                <Button onClick={()=>setShapes([])} variant="secondary"><Trash/></Button>
+                <Button onClick={()=>reset()} variant="secondary"><Trash/></Button>
             </div>
             <div className="flex flex-row gap-1">
                 <Menubar>

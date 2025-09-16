@@ -6,3 +6,24 @@ export type Shape = { id: string; type: "square"; x: number; y: number}
     | { id: string; type: "arrow"; points: number[] };
 
 export type Message = {id: string, text: string, username: string}
+
+export type ShapeMessage = {
+    type: "shape",
+    payload: Shape
+};
+
+export type ResetMessage = {
+    type: "reset"
+};
+
+export type ChatMessage = {
+    type: "chat",
+    payload: Message
+};
+
+export type InitMessage = {
+   type: "init",
+   payload: Shape[]
+};
+
+export type WSMessage = ShapeMessage | ResetMessage | ChatMessage | InitMessage;

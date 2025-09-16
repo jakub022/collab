@@ -1,17 +1,42 @@
-import type { Message } from "@/util/types";
-import { useState } from "react";
+import type { ChatMessage, Message, WSMessage } from "@/util/types";
+import { useEffect, useState } from "react";
 
-export default function Chat(){
+type ChatProps = {
+    ws: WebSocket | null;
+    username: string
+};
+
+export default function Chat({ws, username}: ChatProps){
     const [open, setOpen] = useState(true);
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
-    const username = "testuser";
 
-    const messageElements = messages.map((msg) => (<div key={msg.id} className={`p-2 rounded-lg w-max ${msg.username === username ? "bg-blue-200 ml-auto" : "bg-gray-200"}`}>{msg.username !== username && <div className="text-xs text-gray-600">{msg.username}</div>} {msg.text}</div>));
+    useEffect(()=>{
+        if(!ws){
+            return;
+        }
+
+        function handleMessage(event: MessageEvent){
+            try {
+                const data = JSON.parse(event.data) as WSMessage;
+                if(data.type === "chat"){
+                    const msg: Message = data.payload;
+                    setMessages(prev=>[...prev, msg]);
+                }
+            } catch(err){
+                console.error("Invalid chat message recieved: ", err);
+            }
+        }
+        ws.addEventListener("message", handleMessage);
+
+        return ()=>{
+            ws.removeEventListener("message", handleMessage);
+        }
+    }, [ws]);
 
     function sendMessage(){
-        if (!input.trim()) return;
+        if (!input.trim() || !ws || ws.readyState !== WebSocket.OPEN) return;
         const newMsg: Message = {
             id: crypto.randomUUID(),
             text: input,
@@ -19,7 +44,11 @@ export default function Chat(){
         };
         setMessages(prev => [...prev, newMsg]);
         setInput("");
+
+        ws.send(JSON.stringify({type: "chat", payload: newMsg} as ChatMessage))
     }
+
+    const messageElements = messages.map((msg) => (<div key={msg.id} className={`p-2 rounded-lg w-max ${msg.username === username ? "bg-blue-200 ml-auto" : "bg-gray-200"}`}>{msg.username !== username && <div className="text-xs text-gray-600">{msg.username}</div>} {msg.text}</div>));
 
     return (
         <div className="absolute bottom-0 left-0 z-50">
