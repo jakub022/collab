@@ -117,9 +117,12 @@ export default function Room(){
                         key={shape.id}
                         x={shape.x}
                         y={shape.y}
-                        width={50}
-                        height={50}
-                        fill="black"
+                        width={120}
+                        height={60}
+                        cornerRadius={12}
+                        fill="#bfdbfe"
+                        stroke="#2563eb"
+                        strokeWidth={3}
                         draggable={tool === "hand"}
                         onDragEnd={dragEndSimple(shape)}
                     />
@@ -131,7 +134,9 @@ export default function Room(){
                         x={shape.x}
                         y={shape.y}
                         text={shape.text}
-                        fontSize={16}
+                        fontSize={18}
+                        fontStyle="bold"
+                        fill="#1e3a8a"
                         draggable={tool === "hand"}
                         onDragEnd={dragEndSimple(shape)}
                     />
@@ -141,8 +146,8 @@ export default function Room(){
                     <Line
                         key={shape.id}
                         points={shape.points}
-                        stroke="black"
-                        strokeWidth={2}
+                        stroke="#2563eb"
+                        strokeWidth={3.5}
                         tension={0.5}
                         lineCap="round"
                         lineJoin="round"
@@ -155,10 +160,10 @@ export default function Room(){
                     <Arrow
                         key={shape.id}
                         points={shape.points}
-                        stroke="black"
-                        strokeWidth={2}
-                        pointerLength={10}
-                        pointerWidth={10}
+                        stroke="#2563eb"
+                        strokeWidth={3.5}
+                        pointerLength={12}
+                        pointerWidth={12}
                         draggable={tool === "hand"}
                         onDragEnd={dragEndLine(shape)}
                     />
@@ -174,6 +179,31 @@ export default function Room(){
         else{
             return { x: pos.x, y: pos.y };
         }
+    }
+
+    function Grid({ width, height, cellSize }: { width: number; height: number; cellSize: number }) {
+        const lines = [];
+        for (let x = 0; x <= width; x += cellSize) {
+            lines.push(
+                <Line
+                    key={`v-${x}`}
+                    points={[x, 0, x, height]}
+                    stroke="#D3D3D3"
+                    strokeWidth={1}
+                />
+            );
+        }
+        for (let y = 0; y <= height; y += cellSize) {
+            lines.push(
+                <Line
+                    key={`h-${y}`}
+                    points={[0, y, width, y]}
+                    stroke="#D3D3D3"
+                    strokeWidth={1}
+                />
+            );
+        }
+        return <>{lines}</>;
     }
 
     return (
@@ -194,7 +224,11 @@ export default function Room(){
                             newShape = { id: crypto.randomUUID(), type: "square", x: pos.x, y: pos.y };
                             break;
                         case "text":
-                            newShape = { id: crypto.randomUUID(), type: "text", x: pos.x, y: pos.y, text: "TEXT" };
+                            let text = prompt("Enter text: ")
+                            if(!text){
+                                return;
+                            }
+                            newShape = { id: crypto.randomUUID(), type: "text", x: pos.x, y: pos.y, text: text };
                             break;
                         case "pen":
                             setIsDrawing(true);
@@ -251,11 +285,13 @@ export default function Room(){
                 }}
                 >
                 <Layer>
-                    <Rect x={0} y={0} width={stageWidth} height={stageHeight} fill="white" />
+                    <Rect x={0} y={0} width={stageWidth} height={stageHeight} fill="#E5E4E2" />
+                    <Grid width={stageWidth} height={stageHeight} cellSize={40}/>
                     {shapeElements}
                 </Layer>
             </Stage>
             <Chat ws={socket} username={username} />
+            <div className="absolute bottom-2 right-2 text-2xl dark:text-slate-900 text-slate-700 font-semibold">Room id: {roomId}</div>
         </div>
     );
 }
