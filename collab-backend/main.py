@@ -1,8 +1,11 @@
 import uuid
 from fastapi import APIRouter, FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import TypeAdapter
 from ws_manager import RoomManager
 from models import ChatMessage, Message, ResetMessage, Shape, ShapeMessage, WSMessage
+from pathlib import Path
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -57,4 +60,6 @@ def check_room(room_id: str):
     return {"room_id": room_id}
 
 app.include_router(api_router)
-    
+
+frontend_path = Path(__file__).parent.parent / "collab" / "dist"
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
