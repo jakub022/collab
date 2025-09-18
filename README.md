@@ -7,7 +7,6 @@ A realtime collaborative whiteboard and chat app, built to practice modern fulls
 - Backend: FastAPI with WebSockets for realtime collaboration
 - Frontend: React + TypeScript (Vite) with React Router for site navigation
 - UI: shadcn/ui components for a consistent interface
-- Authentication: Firebase with JWT for secure account management
 - Deployment: Minimal Docker setup for easy deployment on Render
 
 
