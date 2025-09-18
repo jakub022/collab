@@ -12,7 +12,7 @@ A realtime collaborative whiteboard and chat app, built to practice modern fulls
 
 ## Demo
 
-.. - may take a minute or two to spin up
+https://collab-1rww.onrender.com - may take a minute or two to spin up
 
 ## Screenshots
 Two users interacting realtime
