@@ -12,6 +12,7 @@ api_router = APIRouter(prefix="/api")
 room_manager = RoomManager()
 
 wsmessage_adapter = TypeAdapter(WSMessage)
+frontend_path = Path(__file__).parent.parent / "collab" / "dist"
 
 @app.websocket("/ws/{room_id}")
 async def websocket_endpoint(room_id: str, websocket: WebSocket):
@@ -61,5 +62,8 @@ def check_room(room_id: str):
 
 app.include_router(api_router)
 
-frontend_path = Path(__file__).parent.parent / "collab" / "dist"
-app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+app.mount("/assets", StaticFiles(directory=frontend_path / "assets"), name="assets")
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    return FileResponse(frontend_path / "index.html")

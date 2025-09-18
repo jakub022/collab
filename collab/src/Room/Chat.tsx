@@ -1,5 +1,6 @@
 import type { ChatMessage, Message, WSMessage } from "@/util/types";
 import { useEffect, useState } from "react";
+import { v4 } from "uuid";
 
 interface ChatProps {
     ws: WebSocket | null;
@@ -38,7 +39,7 @@ export default function Chat({ws, username}: ChatProps){
     function sendMessage(){
         if (!input.trim() || !ws || ws.readyState !== WebSocket.OPEN) return;
         const newMsg: Message = {
-            id: crypto.randomUUID(),
+            id: v4(),
             text: input,
             username
         };

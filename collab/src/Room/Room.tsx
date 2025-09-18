@@ -5,6 +5,7 @@ import { Arrow, Line, Layer, Rect, Stage, Text } from "react-konva";
 import Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import type { InitMessage, ResetMessage, Shape, ShapeMessage, Tool, WSMessage } from "@/util/types";
+import { v4 } from "uuid";
 
 export default function Room(){
 
@@ -221,22 +222,22 @@ export default function Room(){
 
                     switch(tool){
                         case "square":
-                            newShape = { id: crypto.randomUUID(), type: "square", x: pos.x, y: pos.y };
+                            newShape = { id: v4(), type: "square", x: pos.x, y: pos.y };
                             break;
                         case "text":
                             let text = prompt("Enter text: ")
                             if(!text){
                                 return;
                             }
-                            newShape = { id: crypto.randomUUID(), type: "text", x: pos.x, y: pos.y, text: text };
+                            newShape = { id: v4(), type: "text", x: pos.x, y: pos.y, text: text };
                             break;
                         case "pen":
                             setIsDrawing(true);
-                            newShape = { id: crypto.randomUUID(), type: "pen", points: [pos.x, pos.y]};
+                            newShape = { id: v4(), type: "pen", points: [pos.x, pos.y]};
                             break;
                         case "arrow":
                             setIsDrawing(true);
-                            newShape = { id: crypto.randomUUID(), type: "arrow", points: [pos.x, pos.y]};
+                            newShape = { id: v4(), type: "arrow", points: [pos.x, pos.y]};
                             break;
                     }
 
