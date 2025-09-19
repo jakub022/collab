@@ -12,11 +12,11 @@ A realtime collaborative whiteboard and chat app, built to practice modern fulls
 
 ## Demo
 
-https://collab-1rww.onrender.com - may take a minute or two to spin up
+https://collab-1rww.onrender.com - may take a minute to spin up
 
 ## Screenshots
 Two users interacting realtime
-![App](docs/collab.gif)
+![Room](docs/room.png)
 Landing page / room creation
 ![Landing page](docs/landing.png)
 
